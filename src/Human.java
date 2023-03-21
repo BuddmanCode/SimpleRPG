@@ -1,6 +1,6 @@
 import java.util.Map;
 import java.util.NoSuchElementException;
-
+//Человек. Имеет ися. Может лечитсья.
 public class Human extends Creature implements Healable {
     String name;
 

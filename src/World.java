@@ -5,21 +5,27 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-
+// Здесь содержится структура мира и происходят взаимодействия между его обитателями
 public class World {
+    //Текущая позиция героя.
     private int xCurrent;
     private int yCurrent;
+    //чтоб не выходить за пределы карты.
     private int maxWidth;
     private int maxHeight;
+    //Заготовки для генерации существ.
     private HashMap<Integer, CreatureStatPack> statPackMap;
     int heroId;
     private Hero hero;
-
+    //Доступные локации.
     private ArrayList<Location> locations;
+    //группы существ. Нужны для выбора конструктора.
     private HashMap<Integer, CreatureGroup> creatureGroups;
-    //private Location[][] globalLocations; //Система ячеек меня не удовлетворяет. Нужны именно ссылки на локацию с координатами.
+    //"структура" мира. Заполняется на основе данных локаций.
     private Cell[][] globalCells;
+    //виды поверхности. Используются в локациях.
     private HashMap<Integer, Terrain> terrainsMap;
+    // Загружаем из бд всякое разное, формируем карту, исходя из загруженного
     public World() throws SQLException {
         creatureGroups = DBConnection.ReadCreatureGroups(); //Загружаем группы существ
         statPackMap = DBConnection.ReadCreatureStats(creatureGroups); //Загружаем характеристики существ
@@ -29,15 +35,17 @@ public class World {
         generateGlobalCellStructure(); //размещаем локации в мире
         for(Location loc: locations) {
             if(loc.isSafe()) {
-                placeHero(loc.getXBottomLeft(), loc.getYBottomLeft());
+                placeHero(loc.getXBottomLeft(), loc.getYBottomLeft()); //размещаем героя в первой попавшейся безопасной локации (в норме она будет первой)
                 break;
             }
         }
     }
+    //наверное, надо было в конструкторе исключение тупо кидать
     public boolean heroExist() {
         if( hero == null) return false;
         return true;
     }
+    //Помещение гуроя в указанную локация (если возможно).
     public boolean placeHero(int x, int y) {
         if(isPassable(yCurrent,xCurrent)) {
             if (hero == null)
@@ -48,6 +56,7 @@ public class World {
         }
         return false;
     }
+    //Создание массива ячеек. Размещение ячеек в соответствии с локациями. (локация в данном случае - описательная часть. ходит герой по ячейкам)
     private void generateGlobalCellStructure() {
         int maxWidth = 0, maxHeight = 0;
         for (Location loc: locations) {
@@ -56,7 +65,6 @@ public class World {
         }
         this.maxWidth = maxWidth;
         this.maxHeight = maxHeight;
-        //globalCells = new Cell[maxHeight][maxWidth];
         globalCells = new Cell[maxHeight][maxWidth];
         int x,y;
         ArrayList<Location> locationsToDelete = new ArrayList<Location>();
@@ -86,6 +94,7 @@ public class World {
             locations.remove(locDel);
         }
     }
+    //Возможность пойти в ячейку. (существование, проходимость)
     public boolean isPassable(int y, int x) {
         if (y < maxHeight && x < maxWidth && x >= 0 && y >= 0) {
             if(globalCells[y][x]!=null){
@@ -94,18 +103,23 @@ public class World {
         }
         return false;
     }
+    //возможность сделать шаг вверх (вперёд)
     public boolean upAllowed() {
         return isPassable(yCurrent + 1,xCurrent);
     }
+    //возможность сделать шаг вниз (назад)
     public boolean downAllowed() {
         return isPassable(yCurrent - 1,xCurrent);
     }
+    //возможность сделать шаг влево
     public boolean leftAllowed() {
         return isPassable(yCurrent,xCurrent - 1);
     }
+    //возможность сделать шаг вправо
     public boolean rightAllowed() {
         return isPassable(yCurrent,xCurrent + 1);
     }
+    //Описание указанной ячейки
     public String description(int y, int x) {
         if (y < maxHeight && x < maxWidth && x >= 0 && y >= 0) {
             if(globalCells[y][x]!=null){
@@ -114,6 +128,7 @@ public class World {
         }
         return "Край земли";// (где-то там затаились древние боги и хтонические чудовища)";
     }
+    //Описание происходящего в текущей ячейке, описание окружение
     public StringBuilder getDescription() {
         StringBuilder res = hero.getShortDescription().append("\n").append(currentDescription());
         if(!currentSafe()) res.append(", идёт бой");
@@ -128,12 +143,11 @@ public class World {
         res.append(downDescription());
         return res;
     }
-    public int getCreatureQuantity(){
-        return globalCells[yCurrent][xCurrent].getCreatureList().size();
-    }
+    //Предоставляет список существ, доступных для взаимодействия
     public ArrayList<Creature> getAtionableList(){
         return globalCells[yCurrent][xCurrent].getActionableList();
     }
+    //Количество используемых вещей у героя (чисто для меню)
     public int heroHasUsable(){
         int i=0;
         for (Map.Entry<Item,Integer> entry: hero.provideBackpack().entrySet()) {
@@ -142,27 +156,35 @@ public class World {
         }
         return i;
     }
-    public boolean currentSafe() { //в текущей ячейке нет противника
+    //в текущей ячейке нет противника
+    public boolean currentSafe() {
         return globalCells[yCurrent][xCurrent].isSafe();
     }
-    public boolean canGo() { //в текущей ячейке нет агрессивного противника
+    //в текущей ячейке нет противника, которые будет препятствовать отступлению
+    public boolean canGo() {
         return globalCells[yCurrent][xCurrent].canGo();
     }
+    //описание локации, к которой относится текущая ячейка
     public String currentDescription() {
         return globalCells[yCurrent][xCurrent].getLocationName();
     }
+    //Описание локации спереди
     public String upDescription() {
         return description(yCurrent + 1, xCurrent);
     }
+    //Описание локации  сзади
     public String downDescription() {
         return description(yCurrent - 1, xCurrent);
     }
+    //Описание локации справа
     public String rightDescription() {
         return description(yCurrent, xCurrent + 1);
     }
+    //Описание локации слева
     public String leftDescription() {
         return description(yCurrent, xCurrent - 1);
     }
+    //Попытка побега в зависимости от соотношения характеристик героя и противников, присутствующих в ячейке
     private boolean tryRun() {
         if(canGo())
             return true;
@@ -183,6 +205,7 @@ public class World {
             return false;
         }
     }
+    //шаг вперёд
     public boolean stepUp() {
         if(upAllowed()) {
             if(tryRun()){
@@ -192,6 +215,7 @@ public class World {
         }
         return false;
     }
+    //шаг назад
     public boolean stepDown() {
         if(downAllowed()) {
             if(tryRun()){
@@ -201,6 +225,7 @@ public class World {
         }
         return false;
     }
+    //шаг вправо
     public boolean stepRight() {
         if(rightAllowed()) {
             if(tryRun()){
@@ -210,6 +235,7 @@ public class World {
         }
         return false;
     }
+    //шаг влево
     public boolean stepLeft() {
         if(leftAllowed()) {
             if(tryRun()){
@@ -219,6 +245,8 @@ public class World {
         }
         return false;
     }
+    //обновление мира, пересоздание монстров в ячейках, восстановление характеристик героя.
+    // (планировалось, что только удаление, а создаваться они будут, когда ячейка становится "видна". Но механику видимости не реализовал.
     public StringBuilder resetWorld() {
         for (Cell[] line: globalCells) {
             for (Cell cell: line) {
@@ -228,9 +256,11 @@ public class World {
         hero.setStatsToLevel();
         return new StringBuilder("Батя готовит кашу!\nПрошло время.\nТорговцы пополнили свои запасы, монстры снова расползлись по миру.\nЗдоровье героя восстановлено.");
     }
+    //Описание существ текущей ячейки для главного меню
     public StringBuilder getCreaturesDescription() {
         return globalCells[yCurrent][xCurrent].getCreaturesDescription();
     }
+    //Стукать
     public StringBuilder attack(Creature target) {
         StringBuilder res = new StringBuilder();
         res.append("Герой ударил ");
@@ -244,6 +274,7 @@ public class World {
         }
         return res;
     }
+    //Огребать ото всех существ в ячейке
     public StringBuilder rake() {
         StringBuilder res = new StringBuilder();
         int damage;
@@ -265,17 +296,15 @@ public class World {
         }
         return res;
     }
-    /*public StringBuilder linger() {
-
-    }*/
+    //Проверка живости героя
     public boolean isHeroAlive() {
         return hero.isAlive();
     }
-
+    //Передать герою содержимое рюкзака указанного существа
     public StringBuilder loot(Creature creature) {
         return hero.loot(creature);
     }
-
+    //Вывод списка используемых предметов из инвентаря героя, запрос, какой из них нужно использовать. Использование.
     public void useItems() throws IOException  {
         StringBuilder builder = new StringBuilder();
         Map<Item, Integer> backpack = hero.provideBackpack();
@@ -314,6 +343,8 @@ public class World {
         }
 
     }
+    //Меню торговли. На данный момент реализовано дендрофекальным методом.
+    // Сначала возможность продать один пункт из инвентаря героя, потом возможность купить один пункт из инвентаря торговца.
     public void trade(Trader target) throws IOException { //Всё очень плохо (((
         StringBuilder builder = new StringBuilder();
         Map<Item, Integer> backpack = hero.provideBackpack();

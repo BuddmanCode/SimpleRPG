@@ -1,4 +1,6 @@
 import java.util.Optional;
+//Однократно используемый предмет (например, зелье)
+//не стоило разделять однократно и многократно используемые предметы
 public abstract class OnceUsableItem extends Item implements Usable {
     private int effectValue;
     private Item wasteItem;
@@ -15,8 +17,9 @@ public abstract class OnceUsableItem extends Item implements Usable {
     public int getEffectValue() {
         return effectValue;
     }
+    //эффект, оказыыаемый предметом
     abstract <T> void effect(T target) throws ClassCastException;
-
+    //интерфейс использования. проверяет возможность использования, вызывает эффект
     @Override
     public <T extends Human> Optional<Item> use(T target){
         if(remainingUses > 0) {

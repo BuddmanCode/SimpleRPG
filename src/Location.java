@@ -2,17 +2,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Random;
-
+//Информация о локации, поверхностьи
 public class Location {
+    //Название
     private final String name;
+    //уровень
     private final int level;
-    //private Cell[][] cellsArrayList;
+    //размеры
     private final int height;
     private final int width;
+    //координаты левого нижнего угла
     private final int yBottomLeft;
     private final int xBottomLeft;
+    //Поверхность. Содержит информацию о возможных существах и можно ли по "этому" ходить
     private Terrain terrain;
+    //базовое состояние локации. Планировалось, что в зависимости от этого будут спавниться разные NPC, но не реализовано
     private boolean isSafe;
+    //Должны ли спавниться все противники сразу или рандомно один из.
     private boolean spawnAll;
 
     public Location(String name, int level, int width, int height, int xBottomLeft, int yBottomLeft, boolean isSafe, boolean spawnAll, Terrain terrain) {
@@ -44,12 +50,15 @@ public class Location {
     public int getXBottomLeft() {
         return xBottomLeft;
     }
+    //безоавсность локации. так как безопасноть на данный момент не учитывается при заполнении мобами, то использовать не целесообразно.
     public boolean isSafe() {
         return isSafe;
     }
+    //можно ли здесь пройти
     public boolean isPassable() {
         return terrain.isPassable();
     }
+    //создание существ для размещения в ячейке
     public ArrayList<Creature> makeCreatures() {
         Random rand = new Random(System.currentTimeMillis());
         ArrayList<Creature> creatureList = new ArrayList<Creature>();
@@ -65,6 +74,7 @@ public class Location {
         }
         return creatureList;
     }
+    //выбор конструктора в зависимости от группы существа
     public Creature makeNewCreature(CreatureStatPack stats, int level) throws NoSuchElementException {
         switch(stats.group.name) {
             case "Monster": return new Monster(stats,level);
@@ -74,96 +84,14 @@ public class Location {
         }
 
     }
+    //описание локации
     @Override
     public String toString(){
         return getDescription().toString();
     }
+    //описание локации
     public StringBuilder getDescription(){
         return new StringBuilder(name).append(" [").append(terrain.toString()).append("] ").append(level).append(" уровня");
     }
 
 }
-/*
-import java.util.Random;
-
-public class Location {
-    private final String name;
-    private final int level;
-    private Cell[][] cellsArrayList;
-    private final int height;
-    private final int width;
-    private final int yBottomLeft;
-    private final int xBottomLeft;
-    private Terrain terrain;
-    private boolean isSafe;
-    public Location(String name, int level, int width, int height, int xBottomLeft, int yBottomLeft, boolean isSafe, Terrain terrain) {
-        this.name = name;
-        this.level = level;
-        this.width = width;
-        this.height = height;
-        this.xBottomLeft = xBottomLeft;
-        this.yBottomLeft = yBottomLeft;
-        this.isSafe = isSafe;
-        this.terrain = terrain;
-        cellsArrayList = new Cell[height][width]; //ArrayList<ArrayList<Cell>>(height);
-        Random rand = new Random(System.currentTimeMillis());
-        for(int y = 0;y<height;y++) {
-            for(int x = 0;x<width;x++) {
-                cellsArrayList[y][x] = new Cell(terrain);
-                if (isSafe) {
-                    cellsArrayList[y][x].addCreature(new Trader("Trader", this.level,"Акаши")); //AzurLane, привет )))
-                    //В норме мы должны выяснять у Terrian, что там может спавниться, но пока заглушка
-                    //Да и уровень должен быть +-. Зря я скейлы статов подбирал, что-ли...
-                    if(rand.nextInt(2) == 0) {
-                        cellsArrayList[y][x].addCreature(new Monster("Goblin", this.level));
-                    } else {
-                        cellsArrayList[y][x].addCreature(new Monster("Skeleton", this.level));
-                    }
-                }
-            }
-        }
-    }
-    public String getName() {
-        return name;
-    }
-    public int getLevel() {
-        return level;
-    }
-    public int getHeight() {
-        return height;
-    }
-    public int getWidth() {
-        return width;
-    }
-    public int getYBottomLeft() {
-        return yBottomLeft;
-    }
-    public int getXBottomLeft() {
-        return xBottomLeft;
-    }
-    public boolean isSafe() {
-        return isSafe;
-    }
-    public Cell[][] getCellsArrayList() {
-        return cellsArrayList;
-    }
-    public Cell getCellsArrayList(int x, int y) {
-        return cellsArrayList[y][x];
-    }
-    @Override
-    public String toString(){
-        return new StringBuilder(name).append(" [").append(terrain.toString()).append("] ").append(level).append(" уровня (").append(isSafe?"безопасно)":"опасность)").toString();
-    }
-
-    public boolean isPassable(int y, int x) {
-        return cellsArrayList[y][x].isPassable();
-    }
-
-    public String toStringWithCell(int y, int x) {
-        //return new StringBuilder(name).append(" [").append(cellsArrayList[y][x].toString()).append("] ").append(level).append(" уровня (").append(isSafe?"безопасно)":"опасность)").toString();
-        //Здесь будет предоставляться информация о существах в ячейке и их состоянии.
-        return toString();
-    }
-    //Ячейки надо бы как-то генерировать, чтобы они имели или не имели необходиых интерфейсов...
-}
-*/

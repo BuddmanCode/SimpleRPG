@@ -1,15 +1,14 @@
 import java.util.*;
-
+//Предмет
 public class Item {
-    private int id;
-    private String name;
-    private int cost;
-
-    private int level;
+    private int id; //из бд
+    private String name; //название
+    private int cost; //базовая цена, цена продажи.
+    private int level; //уровень предмета. Должен использоваться для определени возможности появления в монстрах
     private int groupId; //Это нужно при создании а не здесь
-    private boolean isSingle;
+    private boolean isSingle; //предмет не стакается
     private static WeakHashMap uniqueCheck = new WeakHashMap<UUID, Item>(); //Не уверен, что это действительно нужно. Но это будет использоваться для проверки уникальности uuid.
-    private UUID uuid;
+    private UUID uuid; //используется для проверки уникальности предметов, которые не стакаются.
     Item(int itemID, String name, int cost, int level, boolean isSingle) {
         this.id = itemID;
         this.name = name;

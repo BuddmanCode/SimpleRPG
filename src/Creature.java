@@ -1,5 +1,5 @@
 import java.util.*;
-
+//Базовый класс существа
 public abstract class Creature implements Fightable, Damageable, Lootable {
     //private static HashMap<String, CreatureStatPack> statPackMap;
     //private static boolean init = false;
@@ -9,28 +9,34 @@ public abstract class Creature implements Fightable, Damageable, Lootable {
     private int agility;
     private int power;
     private int level;
+    //начальные статы и скейл от уровня
     private CreatureStatPack stats;
-    //private int currentRelationship;
+    //инвентарь
     protected HashMap<Item, Integer> backpack = new HashMap<Item, Integer>();
+    //свой лично илициализированный рандом. Все ведь по разному удачливы...
     protected Random rand = new Random(System.currentTimeMillis());
     public Creature(CreatureStatPack stats, int level) throws NoSuchElementException {
         this.stats = stats;
         this.level = level<1?1:level;
         setStatsToLevel();
     }
+    //Установка характеристик в соответствие с уровнем
     public void setStatsToLevel() {
         healthMax = (int) (stats.healthBase + stats.healthScale*level);
         agility = (int) (stats.agilityBase + stats.agilityScale*level);
         power = (int) (stats.powerBase + stats.powerScale*level);
         health = healthMax;
     }
+    //изменение уровня
     protected void setLevel(int level) {
         this.level = level;
         setStatsToLevel();
     }
+    //добавление одного предмета
     public boolean putItem(Item item) {
         return putNumerousItem(item,1);
     }
+    //добавление некоторого количества предмета
     public boolean putNumerousItem(Item item, int quantity) {
         synchronized (backpack) {
             if (backpack.containsKey(item)) {
@@ -44,6 +50,7 @@ public abstract class Creature implements Fightable, Damageable, Lootable {
             return true;
         }
     }
+    //получение уроня
     @Override
     public void receiveDamage(int damage){
         if( health > damage) {
@@ -52,6 +59,7 @@ public abstract class Creature implements Fightable, Damageable, Lootable {
         }
         health = 0;
     }
+    //Атака цели
     @Override
     public int attack(Damageable target) {
         if( agility * 3 > rand.nextInt(101) ){
@@ -60,7 +68,7 @@ public abstract class Creature implements Fightable, Damageable, Lootable {
         }
         return 0;
     }
-    //@Override
+    //предоставление содержимого рюкзака
     public Map<Item, Integer> provideBackpack() {
         return backpack;
     }
@@ -82,12 +90,14 @@ public abstract class Creature implements Fightable, Damageable, Lootable {
     public int getLevel() {
         return level;
     }
+    //существо будет атаковать (что-то типа защиты территории)
     public boolean isAgressive() {
         if(stats.group.relationshipId > 0 && stats.group.relationshipId <3) {
             return true;
         }
         return false;
     }
+    //существо будет атаковать и мешать побегу
     public boolean isVeryAgressive() {
         if(stats.group.relationshipId == 1) {
             return true;
@@ -104,6 +114,7 @@ public abstract class Creature implements Fightable, Damageable, Lootable {
     public String toString() {
         return getShortDescription().toString();
     }
+    //описание существа для формирования информации об окружении
     public StringBuilder getShortDescription() {
         StringBuilder res = new StringBuilder(getName()).append(" ").append(level).append(" lvl ");
         if(isAlive()) {
@@ -113,6 +124,7 @@ public abstract class Creature implements Fightable, Damageable, Lootable {
         }
         return res;
     }
+    //описание существа находящегося рядом
     public StringBuilder getDescription() {
         return new StringBuilder(getName()).append(" ").append(level).append(" lvl ").append(isAgressive()&&isAlive()?(String.valueOf(health)+ " hp"):"").append(isAlive()?
                 isVeryAgressive()?" !нападает!":

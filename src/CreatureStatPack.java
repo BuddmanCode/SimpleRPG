@@ -2,8 +2,11 @@
 
 import java.util.Objects;
 
+//заотовка статов существа и их скейла
 public final class CreatureStatPack {
+    //название вида существа
     public final String type;
+    //группа существа, его базовое отношение к герою
     public CreatureGroup group;
     public final int healthBase;
     public final int powerBase;
